@@ -33,6 +33,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
@@ -46,6 +47,7 @@ public class MemberentityFacadeREST extends AbstractFacade<Memberentity> {
 
     public MemberentityFacadeREST() {
         super(Memberentity.class);
+
     }
 
     @POST
@@ -53,19 +55,107 @@ public class MemberentityFacadeREST extends AbstractFacade<Memberentity> {
     @Consumes({"application/xml", "application/json"})
     public void create(Memberentity entity) {
         super.create(entity);
+
     }
 
     @PUT
-    @Path("{id}")
+    @Path("updateProfile")
     @Consumes({"application/xml", "application/json"})
-    public void edit(@PathParam("id") Long id, Memberentity entity) {
-        super.edit(entity);
+    public Response edit(Member entity) {
+        try {
+            Class.forName("com.mysql.jdbc.Driver");
+            boolean result;
+
+            Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/islandfurniture-it07?zeroDateTimeBehavior=convertToNull&user=root&password=12345");
+            String stmt = "update memberentity set name =? , Email=?, phone=?, city=?, age=?, address=?, securityAnswer=?, securityQuestion. income=? where email =?";
+            PreparedStatement ps = conn.prepareStatement(stmt);
+
+            ps.setString(1, entity.getName());
+            ps.setString(2, entity.getEmail());
+            ps.setString(3, entity.getPhone());
+            ps.setString(4, entity.getCity());
+            ps.setInt(5, entity.getAge());
+            ps.setString(6, entity.getAddress());
+            ps.setString(7, entity.getSecurityAnswer());
+            ps.setInt(8, entity.getSecurityQuestion());
+            ps.setInt(9, entity.getIncome());
+            ps.setString(10, entity.getEmail());
+             
+
+            ResultSet rs = ps.executeQuery();
+
+            return Response
+                    .status(200)
+                    .entity(entity)
+                    .build();
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return Response.status(Response.Status.UNAUTHORIZED).build();
+
+        }
+
     }
 
     @DELETE
     @Path("{id}")
     public void remove(@PathParam("id") Long id) {
         super.remove(super.find(id));
+    }
+
+    @GET
+    @Path("getMember")
+    @Produces({"application/json"})
+    public Response getMember(@QueryParam("email") String email, @QueryParam("password") String password) {
+
+        try {
+            //  Class.forName("com.mysql.jdbc.Driver");
+            boolean result;
+
+            Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/islandfurniture-it07?zeroDateTimeBehavior=convertToNull&user=root&password=12345");
+            String stmt = "SELECT * FROM memberentity m WHERE m.EMAIL=?";
+            PreparedStatement ps = conn.prepareStatement(stmt);
+            ps.setString(1, email);
+
+            ResultSet rs = ps.executeQuery();
+            //rs.next();
+            if (rs.next()) {
+
+                String name = rs.getString("NAME");
+                String userEmail = rs.getString("EMAIL");
+                String phone = rs.getString("PHONE");
+                String country = rs.getString("CITY");
+                String age = rs.getString("age");
+                String address = rs.getString("ADDRESS");
+                String securityAns = rs.getString("SECURITYANSWER");
+                String income = rs.getString("INCOME");
+
+                Member m = new Member();
+                m.setAddress(address);
+                m.setEmail(userEmail);
+                m.setAge(Integer.parseInt(age));
+                m.setIncome(Integer.parseInt(income));
+                m.setName(name);
+                m.setPhone(phone);
+                m.setCity(country);
+                m.setSecurityAnswer(securityAns);
+
+                System.out.println(m.toString()); //for debugging purpose
+                GenericEntity<Member> myEntity = new GenericEntity<Member>(m) {
+                };
+                return Response
+                        .status(200)
+                        .entity(myEntity)
+                        .build();
+
+            }
+
+            return Response.status(Response.Status.OK).build();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return Response.status(Response.Status.UNAUTHORIZED).build();
+        }
+
     }
 
     @GET
